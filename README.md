@@ -15,7 +15,7 @@ Each tile mirrors the *actual* terminal content of a pane, with colors and styli
 
 Press the same key again to get back to all spaces. The overview remembers the last filter and your favorites for the next time you open it. Closed panes drop out of the favorites.
 
-![The agents filter: three agents from different spaces: one waiting for approval (red), one working (yellow) and marked as a favorite, one idle](docs/screenshots/agents.png)
+![The agents filter: three agents from different spaces: one waiting for approval (red), one working (yellow) and marked as a favorite, one done (teal)](docs/screenshots/agents.png)
 
 ## Typing into panes
 
@@ -26,6 +26,8 @@ Answer an agent without leaving the overview: `i` types into the selected pane, 
 ## Monitor window
 
 Terminal text can't be scaled down, so a popup tile only shows part of a large pane. The `herdr-overview.monitor` action opens the overview in **its own Ghostty window with a small font** instead: tiles show (almost) whole panes, and the window can stay open on a second screen while your agents work. `Enter` jumps to the pane in herdr and the window keeps watching; trigger the action again (or press `q`) to close it.
+
+![The monitor window: with a small font, every tile shows its whole pane](docs/screenshots/monitor.png)
 
 The font size is `monitor_font_size` (default 7). Needs [Ghostty](https://ghostty.org).
 

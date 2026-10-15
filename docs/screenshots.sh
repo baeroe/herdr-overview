@@ -66,10 +66,11 @@ pane_of() { jq -r '.result.root_pane.pane_id'; }
 show() { h pane run "$1" "clear; printf '%b' \"\$(cat ~/$2.txt)\"; echo" >/dev/null; }
 # same, but as an agent: no prompt afterwards, and the pane reports an agent state
 agent() {
-	# "done" is not reportable: herdr derives it when a working agent turns idle
+	# "done" is not reportable: herdr derives it when a working agent turns idle. It has to happen after
+	# the tape attached (attaching marks finished agents as seen), so it runs delayed in the background.
 	if [ "$3" = done ]; then
 		h pane report-agent "$1" --source demo --agent claude --state working >/dev/null
-		h pane report-agent "$1" --source demo --agent claude --state idle >/dev/null
+		(sleep 6 && h pane report-agent "$1" --source demo --agent claude --state idle >/dev/null) &
 	else
 		h pane report-agent "$1" --source demo --agent claude --state "$3" >/dev/null
 	fi
