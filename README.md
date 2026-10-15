@@ -4,7 +4,7 @@ Mission Control for [herdr](https://herdr.dev): a live, tiled overview of all yo
 
 ![The overview: one live tile per space, showing the focused pane of its active tab with real colors](docs/screenshots/overview.png)
 
-Each tile mirrors the *actual* terminal content of a pane, with colors and styling, updated about four times per second. It is not a summary or a status card. The overview is read-only: your spaces are never moved, resized or refocused.
+Each tile mirrors the *actual* terminal content of a pane, with colors and styling, updated about four times per second. It is not a summary or a status card. To fit more into a tile, blank rows are collapsed and long lines wrap. The border shows the agent state at a glance: **red** waits for you (blocked), **yellow** is working, **green** is done. The overview is read-only: your spaces are never moved, resized or refocused.
 
 ## Filters
 
@@ -15,7 +15,13 @@ Each tile mirrors the *actual* terminal content of a pane, with colors and styli
 
 Press the same key again to get back to all spaces. The overview remembers the last filter and your favorites for the next time you open it. Closed panes drop out of the favorites.
 
-![The agents filter: three agents from different spaces, one waiting for approval, marked as a favorite](docs/screenshots/agents.png)
+![The agents filter: three agents from different spaces: one waiting for approval (red), one working (yellow) and marked as a favorite](docs/screenshots/agents.png)
+
+## Monitor window
+
+Terminal text can't be scaled down, so a popup tile only shows part of a large pane. The `herdr-overview.monitor` action opens the overview in **its own Ghostty window with a small font** instead: tiles show (almost) whole panes, and the window can stay open on a second screen while your agents work. `Enter` jumps to the pane in herdr and the window keeps watching; trigger the action again (or press `q`) to close it.
+
+The font size is `monitor_font_size` (default 7). Needs [Ghostty](https://ghostty.org).
 
 ## Keys
 
@@ -49,6 +55,13 @@ key = "alt+o"
 type = "plugin_action"
 command = "herdr-overview.open"
 description = "overview"
+
+# optional: the monitor window
+[[keys.command]]
+key = "alt+shift+o"
+type = "plugin_action"
+command = "herdr-overview.monitor"
+description = "overview monitor"
 ```
 
 Then run `herdr server reload-config`.
@@ -60,13 +73,14 @@ Optional, in `$(herdr plugin config-dir herdr-overview)/config.toml`:
 ```toml
 filter = "all"          # view on first open: "all", "agents" or "favorites" (afterwards the last one is remembered)
 refresh_hz = 4          # 1-10, tile update rate
-scale_mode = "crop"     # "crop" = readable 1:1 live tail (default), "fit" = scaled-down whole viewport
+scale_mode = "compact"  # "compact" = blank rows collapsed, long lines wrapped (default), "crop" = 1:1, "fit" = scaled down
+monitor_font_size = 7   # font size of the monitor window
 show_space_name = true  # space (and tab) name in the tile header
 show_pane_label = true  # pane or agent name in the tile header
 log_debug = false       # debug log in the plugin state dir
 ```
 
-Terminal cells can't be scaled down, so a pane larger than its tile is cropped to its **live tail**: the bottom rows, where the prompt, the latest output and an agent's input box are. Cropped tiles show a `⋮` in the header.
+When a pane still doesn't fit, the tile shows its **live tail**: the latest lines, where the prompt, the newest output and an agent's input box are. Such tiles show a `⋮` in the header.
 
 ## Tests
 
