@@ -27,7 +27,7 @@ const { parseAnsi } = require("../lib/ansi");
 const { loadConfig, ensureDir } = require("../lib/config");
 const { makeLogger } = require("../lib/log");
 const { chooseGrid, tileRect, moveInGrid } = require("../lib/layout");
-const { Screen, paintGrid, drawTileFrame, paintStatus } = require("../lib/render");
+const { Screen, paintGrid, compactLines, drawTileFrame, paintStatus } = require("../lib/render");
 const { subscribe } = require("../lib/socket");
 
 const STATE_DIR = ensureDir(process.env.HERDR_PLUGIN_STATE_DIR);
@@ -41,6 +41,10 @@ const api = new HerdrApi({ socketPath: process.env.HERDR_SOCKET_PATH });
 // plugin's own pane would mirror itself. Popup placement mirrors everything
 // — the pane behind the popup is a real space pane, not the overview.
 const ownPaneId = process.env.HERDR_PANE_ID || null;
+// Monitor window (bin/monitor.js): stays open after jumping to a pane, and
+// leaves a pid file so the action can toggle it.
+const MONITOR = process.env.HERDR_OVERVIEW_MONITOR === "1";
+const PID_FILE = MONITOR && STATE_DIR ? path.join(STATE_DIR, "monitor.pid") : null;
 
 const out = process.stdout;
 const screen = new Screen(out.columns || 80, out.rows || 24);
@@ -86,6 +90,11 @@ function enter() {
   process.on("SIGINT", exit);
   process.on("SIGTERM", exit);
   restoreState();
+  if (PID_FILE) {
+    try {
+      fs.writeFileSync(PID_FILE, String(process.pid));
+    } catch {}
+  }
   log.info("overview opened");
   screen.prevDirty = true;
   render();
@@ -98,6 +107,11 @@ function exit() {
   closing = true;
   if (stream) stream.close();
   saveState();
+  if (PID_FILE) {
+    try {
+      fs.unlinkSync(PID_FILE);
+    } catch {}
+  }
   out.write("\x1b[?1006l\x1b[?1000l");
   out.write("\x1b[?25h");
   out.write("\x1b[?1049l");
@@ -443,6 +457,7 @@ function reconcileTopology(workspaces, panes, layouts) {
     tile.paneId = pane ? pane.pane_id : focusedPaneId;
     tile.paneLabel = pane ? pane.label : null;
     tile.paneAgent = pane ? pane.display_agent || pane.agent : null;
+    tile.agentStatus = pane ? pane.agent_status || null : null;
     if (tile.lastPaneId !== tile.paneId) {
       // mirror target changed (focus or tab moved inside the source space)
       tile.grid = null;
@@ -707,7 +722,7 @@ function enterSelection() {
   } catch (err) {
     log.error(`focus helper failed: ${err.message}`);
   }
-  setTimeout(exit, 80);
+  if (!MONITOR) setTimeout(exit, 80); // the monitor window keeps watching
 }
 
 // ----------------------------------------------------------------- render
@@ -763,22 +778,24 @@ function render() {
       lastRects[i] = rect;
       const selected = i === Math.min(selectedIdx, order.length - 1);
       let label = tileLabel(tile);
-      if (
-        tile.status === "ok" &&
-        tile.grid &&
-        (tile.grid.rows > rect.h - 2 || tile.grid.cols > rect.w - 2)
-      ) {
-        label += " ⋮"; // viewport cropped to the live tail
+      const mode = ["crop", "fit"].includes(config.scale_mode) ? config.scale_mode : "compact";
+      if (tile.status === "ok" && tile.grid) {
+        const cropped =
+          mode === "compact"
+            ? compactLines(tile.grid, rect.w - 2).length > rect.h - 2
+            : tile.grid.rows > rect.h - 2 || tile.grid.cols > rect.w - 2;
+        if (cropped) label += " ⋮"; // only the live tail fits
       }
       drawTileFrame(screen, rect, {
         label,
         selected,
         active: tile.active,
+        status: tile.agentStatus,
       });
       // native-style tab strip along the tile's top edge
       drawTileTabs(rect, i, tile);
       if (tile.status === "ok" && tile.grid) {
-        paintGrid(screen, rect, tile.grid, config.scale_mode === "fit" ? "fit" : "crop");
+        paintGrid(screen, rect, tile.grid, mode);
       } else if (tile.status === "self") {
         paintStatus(screen, rect, "« this overview »");
       } else if (tile.status === "closed") {

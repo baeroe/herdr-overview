@@ -11,6 +11,12 @@ title = "Toggle Spaces Overview"
 contexts = ["workspace"]
 command = ["node", "bin/open.js"]
 
+[[actions]]
+id = "monitor"
+title = "Toggle Overview Monitor Window"
+description = "Open the overview in its own Ghostty window with a small font, or close it."
+command = ["node", "bin/monitor.js"]
+
 [[panes]]
 id = "overview"
 title = "Spaces Overview"

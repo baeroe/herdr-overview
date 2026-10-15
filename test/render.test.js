@@ -4,7 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const { chooseGrid, tileRect, moveInGrid } = require("../lib/layout");
 const { parseAnsi } = require("../lib/ansi");
-const { Screen, paintGrid, drawTileFrame, paintStatus } = require("../lib/render");
+const { Screen, paintGrid, compactLines, drawTileFrame, paintStatus } = require("../lib/render");
 
 test("layout follows the recommended table", () => {
   assert.deepEqual(chooseGrid(1, 200, 50), { cols: 1, rows: 1 });
@@ -37,7 +37,7 @@ test("1:1 painting anchors to the bottom-left like a terminal", () => {
   const screen = new Screen(20, 6);
   const grid = parseAnsi("ABCDEFGHIJ\nKLMNOPQRST");
   drawTileFrame(screen, { x: 0, y: 0, w: 20, h: 6 }, { label: "api", selected: false, active: false });
-  paintGrid(screen, { x: 0, y: 0, w: 20, h: 6 }, grid);
+  paintGrid(screen, { x: 0, y: 0, w: 20, h: 6 }, grid, "crop");
   // content sits at the bottom of the inner area, starting at col 1
   assert.equal(screen.buf[3][1].ch, "A");
   assert.equal(screen.buf[4][1].ch, "K");
@@ -123,4 +123,34 @@ test("arrow keys handle a partly filled last row", () => {
   assert.equal(moveInGrid(1, 3, 2, 0, -1), 1); // up from the gap column stays in it
   assert.equal(moveInGrid(0, 3, 2, 0, -1), 2);
   assert.equal(moveInGrid(0, 1, 1, 0, 1), 0); // single tile
+});
+
+const lineText = (cells) => cells.map((c) => c.ch).join("");
+
+test("compact view collapses blank rows and trims the edges", () => {
+  const grid = parseAnsi("\n\nfirst\n\n\n\nsecond   \n\n");
+  assert.deepEqual(compactLines(grid, 20).map(lineText), ["first", "", "second"]);
+});
+
+test("compact view wraps long lines but cuts rules", () => {
+  const grid = parseAnsi("abcdefghij\n" + "─".repeat(30));
+  assert.deepEqual(compactLines(grid, 4).map(lineText), ["abcd", "efgh", "ij", "────"]);
+});
+
+test("compact painting shows the live tail of the wrapped lines", () => {
+  const screen = new Screen(8, 4);
+  paintGrid(screen, { x: 0, y: 0, w: 8, h: 4 }, parseAnsi("one\n\n\ntwo\nthree"), "compact");
+  assert.equal(lineText(screen.buf[1].slice(1, 7)).trimEnd(), "two");
+  assert.equal(lineText(screen.buf[2].slice(1, 7)).trimEnd(), "three");
+});
+
+test("agent state colours the tile border", () => {
+  const screen = new Screen(10, 4);
+  drawTileFrame(screen, { x: 0, y: 0, w: 10, h: 4 }, { label: "", selected: false, active: false, status: "blocked" });
+  assert.deepEqual(screen.buf[1][0].fg, { kind: "ansi", n: 1 });
+});
+
+test("compact view wraps at word boundaries", () => {
+  const grid = parseAnsi("the quick brown fox");
+  assert.deepEqual(compactLines(grid, 10).map(lineText), ["the quick", "brown fox"]);
 });

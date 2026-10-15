@@ -1,4 +1,4 @@
-# The agents filter: open the overview, press "a", then "f" to mark the selected agent as a favorite.
+# The agents filter: open the overview, press "a", move down a row and press "f" to mark that agent as a favorite.
 Output ".vhs/agents.gif"
 Source "docs/tapes/config.tape"
 
