@@ -17,6 +17,12 @@ Press the same key again to get back to all spaces. The overview remembers the l
 
 ![The agents filter: three agents from different spaces: one waiting for approval (red), one working (yellow) and marked as a favorite](docs/screenshots/agents.png)
 
+## Typing into panes
+
+Answer an agent without leaving the overview: `i` types into the selected pane, `I` types into **every pane shown** at once (sync mode). Combined with a filter that means all agents (`a`) or all favorites (`F`), e.g. to send the same prompt to several agents. Everything is passed through as-is, including `Enter`, `Esc` and `ctrl+c`; the receiving tiles get a magenta border. `ctrl+q` stops typing.
+
+![Sync typing: the same prompt goes to all three agents, their tiles have a magenta border](docs/screenshots/sync.png)
+
 ## Monitor window
 
 Terminal text can't be scaled down, so a popup tile only shows part of a large pane. The `herdr-overview.monitor` action opens the overview in **its own Ghostty window with a small font** instead: tiles show (almost) whole panes, and the window can stay open on a second screen while your agents work. `Enter` jumps to the pane in herdr and the window keeps watching; trigger the action again (or press `q`) to close it.
@@ -30,6 +36,8 @@ The font size is `monitor_font_size` (default 7). Needs [Ghostty](https://ghostt
 | `←↑↓→` / `h j k l` / click | move through the grid (↑↓ change rows, ←→ step through all tiles; both wrap around) |
 | `1`-`9` | jump into that tile |
 | `Enter` / double-click | jump into the selected space, or straight to the pane with a filter |
+| `i` | type into the selected pane (`ctrl+q` stops) |
+| `I` | type into all panes shown, sync mode (`ctrl+q` stops) |
 | `f` | mark / unmark the selected pane as a favorite (★) |
 | `a` / `F` | toggle the agents / favorites filter |
 | `[` `]` / click a tab | switch the space's active tab (all spaces view) |

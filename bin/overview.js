@@ -59,6 +59,11 @@ const FILTERS = ["all", "agents", "favorites"];
 let filter = FILTERS.includes(config.filter) ? config.filter : "all";
 let favorites = new Set(); // pane ids, toggled with "f"
 const paneMode = () => filter !== "all";
+// Input mode: keystrokes go to the selected pane ("one", key i) or to every
+// pane shown in the overview ("all", key I, sync typing). ctrl+q leaves.
+let inputMode = null;
+const LEAVE_INPUT = "\x11"; // ctrl+q
+const sendQueues = new Map(); // paneId -> { pending: string, busy: boolean }
 let lastRects = [];
 let lastCols = 1; // columns of the last rendered grid, for up/down
 let lastChips = []; // per-tile tab-bar hit rects for mouse
@@ -532,6 +537,10 @@ async function refreshTile(wsId) {
 
 function onInput(data) {
   const str = data.toString("utf8");
+  if (inputMode) {
+    forwardInput(str);
+    return;
+  }
   let i = 0;
   while (i < str.length) {
     const rest = str.slice(i);
@@ -586,6 +595,8 @@ function onInput(data) {
     else if (ch === "a") toggleFilter("agents");
     else if (ch === "F") toggleFilter("favorites");
     else if (ch === "f") toggleFavorite();
+    else if (ch === "i") setInputMode("one");
+    else if (ch === "I") setInputMode("all");
     i += 1;
   }
 }
@@ -618,6 +629,85 @@ function handleMouse(button, x, y, kind) {
   }
   lastClick.tile = hit;
   lastClick.at = now;
+}
+
+// ------------------------------------------------------------------ typing
+
+function setInputMode(mode) {
+  if (mode && order.length === 0) return;
+  inputMode = mode;
+  log.info(`input mode ${mode || "off"}`);
+  render();
+}
+
+/** Panes that receive typed input: the selected one, or every tile's pane. */
+function inputTargets() {
+  const keys = inputMode === "all" ? order : [currentSelection()];
+  return keys
+    .map((key) => tiles.get(key))
+    .filter((t) => t && t.paneId && t.paneId !== ownPaneId && t.status !== "closed")
+    .map((t) => t.paneId);
+}
+
+/**
+ * Forward raw terminal input to the target panes. Mouse reports still
+ * select tiles (in "one" mode the input follows the selection); ctrl+q
+ * leaves input mode, everything else (Esc and ctrl+c included) is sent.
+ */
+function forwardInput(str) {
+  let text = "";
+  let i = 0;
+  while (i < str.length) {
+    const rest = str.slice(i);
+    const m = rest.match(/^\x1b\[<(\d+);(\d+);(\d+)([Mm])/);
+    if (m) {
+      handleMouse(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10), m[4]);
+      i += m[0].length;
+      continue;
+    }
+    if (str[i] === LEAVE_INPUT) {
+      sendToTargets(text);
+      setInputMode(null);
+      // anything typed after ctrl+q in the same chunk is a normal key again
+      if (i + 1 < str.length) onInput(Buffer.from(str.slice(i + 1), "utf8"));
+      return;
+    }
+    text += str[i];
+    i += 1;
+  }
+  sendToTargets(text);
+}
+
+function sendToTargets(text) {
+  if (!text) return;
+  for (const paneId of inputTargets()) sendText(paneId, text);
+}
+
+/** Per-pane send queue: keeps keystroke order, batches fast typing. */
+function sendText(paneId, text) {
+  let q = sendQueues.get(paneId);
+  if (!q) {
+    q = { pending: "", busy: false };
+    sendQueues.set(paneId, q);
+  }
+  q.pending += text;
+  if (q.busy) return;
+  const flush = async () => {
+    q.busy = true;
+    while (q.pending && !closing) {
+      const chunk = q.pending;
+      q.pending = "";
+      try {
+        await api.paneSendText(paneId, chunk);
+      } catch (err) {
+        log.error(`send to ${paneId} failed: ${err.message}`);
+      }
+      const key = order.find((k) => tiles.get(k)?.paneId === paneId);
+      if (key) refreshTile(key).catch(() => {}); // show the echo right away
+    }
+    q.busy = false;
+  };
+  flush();
 }
 
 // ------------------------------------------------------------ tab actions
@@ -791,6 +881,7 @@ function render() {
         selected,
         active: tile.active,
         status: tile.agentStatus,
+        input: inputMode === "all" || (inputMode === "one" && selected),
       });
       // native-style tab strip along the tile's top edge
       drawTileTabs(rect, i, tile);
@@ -813,14 +904,23 @@ function render() {
     ensureTabsForTiles();
   }
 
-  const hint =
-    (filter === "all"
-      ? "1-9/←↑↓→ select · ↵/dbl-click enter · [/] tab · f favorite · a agents · F favorites · esc close"
-      : `1-9/←↑↓→ select · ↵/dbl-click jump to pane · f favorite · ${
-          filter === "agents" ? "a all spaces · F favorites" : "F all spaces · a agents"
-        } · esc close`) +
-    (connected ? "" : "  [offline]");
-  screen.putText(0, H - 1, hint.slice(0, W), { dim: true, italic: true });
+  if (inputMode) {
+    const n = inputTargets().length;
+    const target =
+      inputMode === "all"
+        ? `all ${n} pane${n === 1 ? "" : "s"}`
+        : tileLabel(tiles.get(currentSelection()) || {}) || "selected pane";
+    const bar = ` TYPING → ${target} · ctrl+q stop typing `;
+    screen.putText(0, H - 1, bar.slice(0, W), { bold: true, reverse: true, fg: { kind: "ansi", n: 5 } });
+  } else {
+    const hint =
+      (filter === "all"
+        ? "←↑↓→ select · ↵ enter · i type · I type in all · f favorite · a agents · F favorites · [/] tab · esc close"
+        : `←↑↓→ select · ↵ jump to pane · i type · I type in all · f favorite · ${
+            filter === "agents" ? "a all spaces · F favorites" : "F all spaces · a agents"
+          } · esc close`) + (connected ? "" : "  [offline]");
+    screen.putText(0, H - 1, hint.slice(0, W), { dim: true, italic: true });
+  }
 
   const frame = screen.flush();
   if (frame) {

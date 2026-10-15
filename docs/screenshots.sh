@@ -73,7 +73,8 @@ agent() {
 	else
 		h pane report-agent "$1" --source demo --agent claude --state "$3" >/dev/null
 	fi
-	h pane run "$1" "clear; printf '%b' \"\$(cat ~/$2.txt)\"; cat >/dev/null" >/dev/null
+	# ends on an input line, so typed text (sync tape) shows up like an agent prompt
+	h pane run "$1" "clear; printf '%b' \"\$(cat ~/$2.txt)\"; printf '\\n\\n\\033[1m>\\033[0m '; cat >/dev/null" >/dev/null
 }
 
 # demo workspaces: shop (server, agent, git log), api (server, agent waiting for approval),
