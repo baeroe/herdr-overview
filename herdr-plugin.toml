@@ -1,0 +1,20 @@
+id = "herdr-overview"
+name = "Herdr Overview"
+version = "0.1.0"
+min_herdr_version = "0.8.2"
+description = "Live tiled overview of all herdr spaces, agents or favorite panes, like macOS Mission Control."
+platforms = ["macos", "linux"]
+
+[[actions]]
+id = "open"
+title = "Toggle Spaces Overview"
+contexts = ["workspace"]
+command = ["node", "bin/open.js"]
+
+[[panes]]
+id = "overview"
+title = "Spaces Overview"
+placement = "popup"
+width = "94%"
+height = "94%"
+command = ["node", "bin/overview.js"]

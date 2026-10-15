@@ -1,0 +1,7 @@
+$ go run ./cmd/api
+\033[2m2026/10/15 09:40:58\033[0m \033[36mINFO\033[0m listening addr=:8080
+\033[2m2026/10/15 09:41:02\033[0m \033[36mINFO\033[0m GET /v1/orders status=200 dur=4ms
+\033[2m2026/10/15 09:41:04\033[0m \033[36mINFO\033[0m GET /v1/orders/1042 status=200 dur=2ms
+\033[2m2026/10/15 09:41:09\033[0m \033[33mWARN\033[0m POST /v1/orders status=429 dur=1ms
+\033[2m2026/10/15 09:41:11\033[0m \033[36mINFO\033[0m GET /v1/health status=200 dur=0ms
+\033[2m2026/10/15 09:41:16\033[0m \033[36mINFO\033[0m PATCH /v1/orders/1042 status=200 dur=7ms

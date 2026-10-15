@@ -1,0 +1,14 @@
+\033[1m> Add rate limiting to the API, 100 requests per minute per key\033[0m
+
+\033[32m●\033[0m Read \033[1mcmd/api/main.go\033[0m
+\033[32m●\033[0m Write \033[1minternal/middleware/ratelimit.go\033[0m (+58)
+\033[32m●\033[0m Update \033[1mcmd/api/main.go\033[0m (+3 -1)
+
+\033[33m╭─────────────────────────────────────────────╮\033[0m
+\033[33m│\033[0m \033[1mRun command?\033[0m                                \033[33m│\033[0m
+\033[33m│\033[0m   go test ./internal/middleware/...         \033[33m│\033[0m
+\033[33m│\033[0m                                             \033[33m│\033[0m
+\033[33m│\033[0m \033[36m❯ 1. Yes\033[0m                                    \033[33m│\033[0m
+\033[33m│\033[0m   2. Yes, and don't ask again               \033[33m│\033[0m
+\033[33m│\033[0m   3. No, tell the agent what to do instead  \033[33m│\033[0m
+\033[33m╰─────────────────────────────────────────────╯\033[0m

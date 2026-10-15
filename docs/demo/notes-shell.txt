@@ -1,0 +1,7 @@
+$ git log --oneline -6
+\033[33ma3f91c2\033[0m Add coupon support to the cart
+\033[33m7be0d14\033[0m Cache product images for 30 days
+\033[33m2c1e9aa\033[0m Fix rounding of tax totals
+\033[33mf04b7e3\033[0m Show stock level on product pages
+\033[33m91d2c55\033[0m Bump dependencies
+\033[33m4e8a1b0\033[0m Initial checkout flow

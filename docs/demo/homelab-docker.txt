@@ -1,0 +1,8 @@
+$ docker compose ps
+\033[1mNAME          IMAGE                  STATUS          PORTS\033[0m
+proxy         caddy:2.8              Up 3 days       0.0.0.0:443->443/tcp
+grafana       grafana/grafana:11     Up 3 days       3000/tcp
+prometheus    prom/prometheus:v2     Up 3 days       9090/tcp
+postgres      postgres:16            Up 3 days       5432/tcp
+backup        restic/restic:0.17     \033[33mUp 2 hours\033[0m
+uptime        louislam/uptime-kuma   \033[32mUp 3 days (healthy)\033[0m
