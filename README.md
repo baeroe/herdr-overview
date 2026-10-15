@@ -21,7 +21,7 @@ Press the same key again to get back to all spaces. The overview remembers the l
 
 | Key | Action |
 |---|---|
-| `↑↓` / `h j k l` / click | select a tile |
+| `←↑↓→` / `h j k l` / click | move through the grid (↑↓ change rows, ←→ step through all tiles; both wrap around) |
 | `1`-`9` | jump into that tile |
 | `Enter` / double-click | jump into the selected space, or straight to the pane with a filter |
 | `f` | mark / unmark the selected pane as a favorite (★) |

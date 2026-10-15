@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { chooseGrid, tileRect } = require("../lib/layout");
+const { chooseGrid, tileRect, moveInGrid } = require("../lib/layout");
 const { parseAnsi } = require("../lib/ansi");
 const { Screen, paintGrid, drawTileFrame, paintStatus } = require("../lib/render");
 
@@ -105,4 +105,22 @@ test("selected tiles use double-line border", () => {
   assert.equal(screen.buf[0][0].ch, "╔");
   assert.equal(screen.buf[0][11].ch, "╗");
   assert.equal(screen.buf[3][0].ch, "╚");
+});
+
+test("arrow keys move through the grid", () => {
+  // 2x2 grid with 4 tiles: 0 1 / 2 3
+  assert.equal(moveInGrid(0, 4, 2, 0, 1), 2); // down
+  assert.equal(moveInGrid(2, 4, 2, 0, -1), 0); // up
+  assert.equal(moveInGrid(2, 4, 2, 0, 1), 0); // down wraps to the top
+  assert.equal(moveInGrid(1, 4, 2, 0, -1), 3); // up wraps to the bottom
+  assert.equal(moveInGrid(1, 4, 2, 1, 0), 2); // right continues on the next row
+  assert.equal(moveInGrid(0, 4, 2, -1, 0), 3); // left wraps to the last tile
+});
+
+test("arrow keys handle a partly filled last row", () => {
+  // 3 tiles in a 2x2 grid: 0 1 / 2 _
+  assert.equal(moveInGrid(1, 3, 2, 0, 1), 2); // down into the gap lands on the last tile
+  assert.equal(moveInGrid(1, 3, 2, 0, -1), 1); // up from the gap column stays in it
+  assert.equal(moveInGrid(0, 3, 2, 0, -1), 2);
+  assert.equal(moveInGrid(0, 1, 1, 0, 1), 0); // single tile
 });

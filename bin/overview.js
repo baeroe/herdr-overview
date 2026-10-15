@@ -26,7 +26,7 @@ const { HerdrApi } = require("../lib/api");
 const { parseAnsi } = require("../lib/ansi");
 const { loadConfig, ensureDir } = require("../lib/config");
 const { makeLogger } = require("../lib/log");
-const { chooseGrid, tileRect } = require("../lib/layout");
+const { chooseGrid, tileRect, moveInGrid } = require("../lib/layout");
 const { Screen, paintGrid, drawTileFrame, paintStatus } = require("../lib/render");
 const { subscribe } = require("../lib/socket");
 
@@ -56,6 +56,7 @@ let filter = FILTERS.includes(config.filter) ? config.filter : "all";
 let favorites = new Set(); // pane ids, toggled with "f"
 const paneMode = () => filter !== "all";
 let lastRects = [];
+let lastCols = 1; // columns of the last rendered grid, for up/down
 let lastChips = []; // per-tile tab-bar hit rects for mouse
 let connected = true;
 let closing = false;
@@ -163,9 +164,10 @@ function currentSelection() {
   return order[Math.min(selectedIdx, order.length - 1)];
 }
 
-function moveSelection(delta) {
+function moveSelection(dx, dy = 0) {
   if (order.length === 0) return;
-  selectedIdx = (selectedIdx + delta + order.length) % order.length;
+  const idx = Math.min(selectedIdx, order.length - 1);
+  selectedIdx = moveInGrid(idx, order.length, lastCols, dx, dy);
   render();
 }
 
@@ -529,8 +531,8 @@ function onInput(data) {
       const m = rest.match(/^\x1b\[([A-DH])/);
       if (m) {
         const key = m[1];
-        if (key === "A") moveSelection(-1);
-        else if (key === "B") moveSelection(1);
+        if (key === "A") moveSelection(0, -1);
+        else if (key === "B") moveSelection(0, 1);
         else if (key === "C") moveSelection(1);
         else if (key === "D") moveSelection(-1);
         i += m[0].length;
@@ -561,8 +563,8 @@ function onInput(data) {
       switchTab(-1);
     } else if (ch === "]" || ch === ".") {
       switchTab(1);
-    } else if (ch === "k") moveSelection(-1);
-    else if (ch === "j") moveSelection(1);
+    } else if (ch === "k") moveSelection(0, -1);
+    else if (ch === "j") moveSelection(0, 1);
     else if (ch === "h") moveSelection(-1);
     else if (ch === "l") moveSelection(1);
     else if (ch === "q") exit();
@@ -753,6 +755,7 @@ function render() {
     paintStatus(screen, { x: 0, y: 0, w: W, h: Math.max(1, H) }, msg);
   } else {
     const grid = chooseGrid(order.length, area.w, area.h);
+    lastCols = grid.cols;
     for (let i = 0; i < order.length; i++) {
       const tile = tiles.get(order[i]);
       if (!tile) continue;
@@ -795,8 +798,8 @@ function render() {
 
   const hint =
     (filter === "all"
-      ? "1-9/↑↓ select · ↵/dbl-click enter · [/] tab · f favorite · a agents · F favorites · esc close"
-      : `1-9/↑↓ select · ↵/dbl-click jump to pane · f favorite · ${
+      ? "1-9/←↑↓→ select · ↵/dbl-click enter · [/] tab · f favorite · a agents · F favorites · esc close"
+      : `1-9/←↑↓→ select · ↵/dbl-click jump to pane · f favorite · ${
           filter === "agents" ? "a all spaces · F favorites" : "F all spaces · a agents"
         } · esc close`) +
     (connected ? "" : "  [offline]");
