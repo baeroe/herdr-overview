@@ -4,18 +4,24 @@ Mission Control for [herdr](https://herdr.dev): a live, tiled overview of all yo
 
 ![The overview: one live tile per space, showing the focused pane of its active tab with real colors](docs/screenshots/overview.png)
 
-Each tile mirrors the *actual* terminal content of a pane, with colors and styling, updated about four times per second. It is not a summary or a status card. To fit more into a tile, blank rows are collapsed and long lines wrap. The border shows the agent state at a glance: **red** waits for you (blocked), **yellow** is working, **green** is done. The overview is read-only: your spaces are never moved, resized or refocused.
+Each tile mirrors the *actual* terminal content of a pane, with colors and styling, updated about four times per second. It is not a summary or a status card. To fit more into a tile, blank rows are collapsed and long lines wrap. The agent state shows like in herdr's sidebar, as a dot in the tile header and as the border color: **red** ● waits for you (blocked), **yellow** ● is working, **teal** ● is done, ○ is idle. The overview is read-only: your spaces are never moved, resized or refocused.
 
 ## Filters
 
 | Key | View |
 |---|---|
-| `a` | **Agents**: one tile per agent pane across all spaces and tabs, also agents in background tabs. The header shows the agent state first (`[working]`, `[blocked]`, `[done]`, …). |
+| `a` | **Agents**: one tile per agent pane across all spaces and tabs, also agents in background tabs. |
 | `F` | **Favorites**: one tile per pane you marked with `f`, across all spaces and tabs. |
 
 Press the same key again to get back to all spaces. The overview remembers the last filter and your favorites for the next time you open it. Closed panes drop out of the favorites.
 
-![The agents filter: three agents from different spaces: one waiting for approval (red), one working (yellow) and marked as a favorite](docs/screenshots/agents.png)
+![The agents filter: three agents from different spaces: one waiting for approval (red), one working (yellow) and marked as a favorite, one idle](docs/screenshots/agents.png)
+
+## Typing into panes
+
+Answer an agent without leaving the overview: `i` types into the selected pane, `I` types into **every pane shown** at once (sync mode). Combined with a filter that means all agents (`a`) or all favorites (`F`), e.g. to send the same prompt to several agents. Everything is passed through as-is, including `Enter`, `Esc` and `ctrl+c`; the receiving tiles get a magenta border. `ctrl+q` stops typing.
+
+![Sync typing: the same prompt goes to all three agents, their tiles have a magenta border](docs/screenshots/sync.png)
 
 ## Monitor window
 
@@ -30,6 +36,8 @@ The font size is `monitor_font_size` (default 7). Needs [Ghostty](https://ghostt
 | `←↑↓→` / `h j k l` / click | move through the grid (↑↓ change rows, ←→ step through all tiles; both wrap around) |
 | `1`-`9` | jump into that tile |
 | `Enter` / double-click | jump into the selected space, or straight to the pane with a filter |
+| `i` | type into the selected pane (`ctrl+q` stops) |
+| `I` | type into all panes shown, sync mode (`ctrl+q` stops) |
 | `f` | mark / unmark the selected pane as a favorite (★) |
 | `a` / `F` | toggle the agents / favorites filter |
 | `[` `]` / click a tab | switch the space's active tab (all spaces view) |

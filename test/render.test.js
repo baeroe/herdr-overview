@@ -154,3 +154,11 @@ test("compact view wraps at word boundaries", () => {
   const grid = parseAnsi("the quick brown fox");
   assert.deepEqual(compactLines(grid, 10).map(lineText), ["the quick", "brown fox"]);
 });
+
+test("agent state shows as a sidebar-style dot before the label", () => {
+  const screen = new Screen(30, 4);
+  drawTileFrame(screen, { x: 0, y: 0, w: 30, h: 4 }, { label: "api", selected: false, active: false, status: "done" });
+  assert.equal(screen.buf[0][3].ch, "●");
+  assert.deepEqual(screen.buf[0][3].fg, { kind: "ansi", n: 6 });
+  assert.equal(lineText(screen.buf[0].slice(5, 8)), "api");
+});
