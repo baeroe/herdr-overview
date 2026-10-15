@@ -827,10 +827,8 @@ function baseLabel(tile) {
     const parts = [];
     if (config.show_space_name) parts.push(tile.tabLabel ? `${tile.label} › ${tile.tabLabel}` : tile.label);
     if (config.show_pane_label) parts.push(tile.paneLabel || tile.paneAgent);
-    const label = parts.filter(Boolean).join(" · ");
-    // status first so narrow tiles truncate the names, not the state
-    const status = tile.agentStatus && tile.agentStatus !== "unknown" ? `[${tile.agentStatus}]` : "";
-    return [status, label].filter(Boolean).join(" ");
+    // the agent state is drawn as a coloured dot in front of the label
+    return parts.filter(Boolean).join(" · ");
   }
   let label = config.show_space_name ? tile.label : "";
   if (config.show_pane_label && tile.paneLabel) {
